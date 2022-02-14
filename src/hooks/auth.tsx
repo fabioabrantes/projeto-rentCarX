@@ -82,6 +82,7 @@ function AuthProvider ({children}:AuthProviderProps) {
       });
 
       setData({} as User);
+      setLoading(false);
     } catch (error: any) {      
       throw new Error(error); 
   }
@@ -108,7 +109,7 @@ function AuthProvider ({children}:AuthProviderProps) {
     async function loadUserData(){
       const userCollection = database.get<ModelUser>('users');
       const response = await userCollection.query().fetch(); // pega todos os dados da coleção
-    
+      
       if(response.length > 0){
         const userData = response[0]._raw as unknown as User;
         api.defaults.headers.common['Authorization']  = `Bearer ${userData.token}`;

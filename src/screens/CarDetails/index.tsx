@@ -77,7 +77,7 @@ export const CarDetails: React.FC = () => {
   });
 
   function handleConfirmRental(){
-    navigation.navigate('Scheduling',{car:carUpdated});
+    navigation.navigate('Scheduling',{car});
   }
   function handleBack(){
     navigation.goBack();
@@ -144,7 +144,7 @@ export const CarDetails: React.FC = () => {
           <Rent>
             <Period>{car.period}</Period>
             <Price>
-              R$ {netInfo.isConnected === true? car.price : '...'}
+              R$ {netInfo.isConnected === true? carUpdated.price : '...'}
             </Price>
           </Rent>
         </Details>

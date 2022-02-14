@@ -5,6 +5,7 @@ import {RFValue} from 'react-native-responsive-fontsize';
 import {useTheme} from 'styled-components'
 import { useNavigation,useRoute } from '@react-navigation/native';
 import {format} from 'date-fns';
+import { useNetInfo } from '@react-native-community/netinfo';
 
 import { BackButton } from '../../components/BackButton';
 import { ImageSlider } from '../../components/ImageSlider';
@@ -54,36 +55,27 @@ interface RentalPeriod{
 }
 
 export const SchedulingDetails: React.FC = () => {
+  const [carUpdated, setCarUpdated] = useState<CarDTO>({} as CarDTO);
   const [loading, setLoading] = useState(false);
   const [rentalPeriod, setRentalPeriod] = useState<RentalPeriod>({} as RentalPeriod);
 
+  const netInfo = useNetInfo();
   const theme = useTheme();
   const navigation = useNavigation();
   const route = useRoute();
   const {car,dates} = route.params as Params;
 
-  const rentTotal = Number(dates.length * car.rent.price);
+  const rentTotal = Number(dates.length * car.price);
 
   async function handleConfirmRental(){
     setLoading(true);
     
-    const response = await api.get(`/schedules_bycars/${car.id}`);
-
-    const unavailable_dates = [
-      ...response.data.unavailable_dates,
-      ...dates
-    ];
-
-    await api.post('schedules_byuser',{
+    await api.post('rentals',{
       user_id:1,
-      car,
-      startDate:format(getPlatformDate(new Date(dates[0])),'dd/MM/yyyy'),
-      endDate:format(getPlatformDate(new Date(dates[dates.length - 1])),'dd/MM/yyyy'),
-    });
-
-    api.put(`/schedules_bycars/${car.id}`,{
-      id:car.id,
-      unavailable_dates,
+      car_id:car.id,
+      start_date:new Date(dates[0]),
+      end_date:new Date(dates[dates.length - 1]),
+      total:rentTotal,
     })
     .then(()=>navigation.navigate('Confirmation',{
       title:'Carro Alugado!',
@@ -107,6 +99,16 @@ export const SchedulingDetails: React.FC = () => {
     });
   },[]);
 
+  useEffect(() =>{
+    async function fetchCarUpdated(){
+      const response = await api.get(`cars/${car.id}`);
+      setCarUpdated(response.data);
+    }
+    if(netInfo.isConnected === true){
+      fetchCarUpdated();
+    }
+  },[netInfo.isConnected]);
+
   return (
     <Container>
       <Header>
@@ -115,7 +117,12 @@ export const SchedulingDetails: React.FC = () => {
       
       <CarImages>
         <ImageSlider 
-          imagesUrl={car.photos}
+          imagesUrl={
+            !!carUpdated.photos? 
+                carUpdated.photos 
+            : 
+                [{id:car.thumbnail, photo:car.thumbnail}]
+          }
         />
       </CarImages>
 
@@ -127,24 +134,24 @@ export const SchedulingDetails: React.FC = () => {
           </Description>
 
           <Rent>
-            <Period>{car.rent.period}</Period>
-            <Price>R$ {car.rent.price}</Price>
+            <Period>{car.period}</Period>
+            <Price>R$ {car.price}</Price>
           </Rent>
         </Details>
        
-        <Accessories>
-          {
-            car.accessories.map(accessory =>(
+        {
+         carUpdated.accessories &&
+          <Accessories>
+            {carUpdated.accessories.map(accessory => (
               <Accessory
                 key={accessory.type}
                 name={accessory.name} 
                 icon={getAccessoryIcon(accessory.type)}
-              /> 
-            ))
-          }
-          
-        </Accessories>
-
+              />
+            ))}          
+          </Accessories>
+        
+       }
        <RentalPeriod>
          <CalendarIcon>
            <Feather name="calendar" size={RFValue(24)} color={theme.colors.shape}/>
@@ -167,7 +174,7 @@ export const SchedulingDetails: React.FC = () => {
          <RentalPriceLabel>TOTAL</RentalPriceLabel>
 
          <RentalPriceDetails>
-           <RentalPriceQuota>{`R$ ${car.rent.price} x${dates.length} diárias`}</RentalPriceQuota>
+           <RentalPriceQuota>{`R$ ${car.price} x${dates.length} diárias`}</RentalPriceQuota>
            <RentalPriceTotal>R$ {rentTotal}</RentalPriceTotal>
          </RentalPriceDetails>
        </RentalPrice>

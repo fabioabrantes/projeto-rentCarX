@@ -15,8 +15,6 @@ import {Car} from '../../components/Car';
 
 import { LoadAnimation } from '../../components/LoadAnimation';
 
-import {CarDTO} from '../../dtos/CarDTO';
-
 import { Car as ModelCar } from '../../databases/model/Car';
 
 import { 
@@ -35,7 +33,7 @@ export const Home: React.FC = () => {
   const netInfo = useNetInfo();
   const navigation = useNavigation();
   
-  function handleCarDetails(car:CarDTO){
+  function handleCarDetails(car:ModelCar){
     navigation.navigate("CarDetails",{car});
   }
 
@@ -85,7 +83,7 @@ export const Home: React.FC = () => {
 
   useEffect(() => {
     if(netInfo.isConnected === true){
-      offlineSynchronize();
+     offlineSynchronize();
     }
   },[netInfo.isConnected]);
 
